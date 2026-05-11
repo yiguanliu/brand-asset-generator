@@ -1,5 +1,14 @@
 # CDG / HOMME PLUS — Brand Asset Generator
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-EFEAE0?style=flat-square&labelColor=0A0908)](LICENSE)
+[![Vite](https://img.shields.io/badge/Vite-5-A8202C?style=flat-square&labelColor=0A0908&logo=vite&logoColor=EFEAE0)](https://vitejs.dev)
+[![React](https://img.shields.io/badge/React-18-EFEAE0?style=flat-square&labelColor=0A0908&logo=react&logoColor=EFEAE0)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-EFEAE0?style=flat-square&labelColor=0A0908&logo=typescript&logoColor=EFEAE0)](https://www.typescriptlang.org)
+[![Tailwind](https://img.shields.io/badge/Tailwind-3-EFEAE0?style=flat-square&labelColor=0A0908&logo=tailwindcss&logoColor=EFEAE0)](https://tailwindcss.com)
+[![Konva](https://img.shields.io/badge/Konva-9-EFEAE0?style=flat-square&labelColor=0A0908)](https://konvajs.org)
+[![Framer Motion](https://img.shields.io/badge/Framer_Motion-11-EFEAE0?style=flat-square&labelColor=0A0908&logo=framer&logoColor=EFEAE0)](https://www.framer.com/motion/)
+[![Deploy on Vercel](https://img.shields.io/badge/Deploy-Vercel-EFEAE0?style=flat-square&labelColor=0A0908&logo=vercel&logoColor=EFEAE0)](https://vercel.com/new)
+
 A browser-based poster / brand-asset generator inspired by the visual world of **COMME des GARÇONS Homme Plus** — Rei Kawakubo's deconstructive minimalism fused with the "software tool aesthetic" of Teenage Engineering manuals, A24 marketing, and Linear / Vercel-era dev-tool brands.
 
 Upload an image (or pick a starter), pass it through a tunable dithering pipeline, compose typography and HUD ornaments on top, and export print-ready PNGs.
@@ -224,4 +233,6 @@ vercel
 
 ## License
 
-Personal / educational use. Brand references are aesthetic homage.
+[MIT](LICENSE) © 2026 yiguanliu.
+
+Brand references to COMME des GARÇONS Homme Plus are aesthetic homage only — no affiliation, sponsorship, or endorsement implied. All third-party trademarks remain the property of their respective owners.
