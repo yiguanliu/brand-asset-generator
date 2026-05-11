@@ -11,11 +11,13 @@ interface DitheredOutput {
 }
 
 /**
- * Loads the source image, runs it through a dither pipeline in a worker,
- * recolors mono → background/foreground/duotone, and returns a canvas.
+ * Two-stage pipeline:
+ *   1. Worker pass — runs on dither/source changes only. Output cached as ImageData.
+ *   2. Recolor pass — runs on color changes; reuses the cached ImageData (no worker round-trip).
+ * Splitting these means adjusting bg/fg/blend/opacity stays cheap.
  */
 export function useDither(): DitheredOutput {
-  const source = usePosterStore((s) => s.source);
+  const sourceUrl = usePosterStore((s) => s.source.imageDataUrl);
   const dither = usePosterStore((s) => s.dither);
   const color = usePosterStore((s) => s.color);
 
@@ -26,24 +28,10 @@ export function useDither(): DitheredOutput {
   const workerRef = useRef<Worker | null>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
   const pendingRef = useRef<number | null>(null);
+  // Cache of last dithered grayscale result so color changes don't re-run the worker.
+  const ditheredRef = useRef<ImageData | null>(null);
 
-  // load HTMLImage when dataUrl changes
-  useEffect(() => {
-    if (!source.imageDataUrl) {
-      imageRef.current = null;
-      setCanvas(null);
-      return;
-    }
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      imageRef.current = img;
-      run();
-    };
-    img.src = source.imageDataUrl;
-  }, [source.imageDataUrl]);
-
-  // init worker
+  // Init worker once
   useEffect(() => {
     const w = new Worker(new URL('@/lib/dither/worker.ts', import.meta.url), {
       type: 'module',
@@ -52,15 +40,62 @@ export function useDither(): DitheredOutput {
     w.onmessage = (e: MessageEvent<DitherResult>) => {
       if (pendingRef.current !== e.data.id) return;
       pendingRef.current = null;
-      paint(e.data.imageData);
+      ditheredRef.current = e.data.imageData;
       setDurationMs(e.data.durationMs);
       setBusy(false);
+      paint(e.data.imageData);
     };
     return () => {
       w.terminate();
       workerRef.current = null;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Load source image into <img>
+  useEffect(() => {
+    if (!sourceUrl) {
+      imageRef.current = null;
+      ditheredRef.current = null;
+      setCanvas(null);
+      return;
+    }
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      imageRef.current = img;
+      runDither();
+    };
+    img.src = sourceUrl;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sourceUrl]);
+
+  // Re-run dither when dither params change (debounced)
+  useEffect(() => {
+    if (!imageRef.current) return;
+    const t = window.setTimeout(runDither, 80);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    dither.algorithm,
+    dither.pixelScale,
+    dither.threshold,
+    dither.levels,
+    dither.preBlur,
+    dither.contrast,
+    dither.brightness,
+    dither.gamma,
+    dither.invert,
+    dither.serpentine,
+  ]);
+
+  // Recolor only when color changes and we already have a dithered cache
+  useEffect(() => {
+    const id = ditheredRef.current;
+    if (!id) return;
+    paint(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [color.background, color.foreground, color.accent, color.mode, color.duotoneRamp]);
 
   function paint(processed: ImageData) {
     const { width, height } = processed;
@@ -68,26 +103,24 @@ export function useDither(): DitheredOutput {
     out.width = width;
     out.height = height;
     const ctx = out.getContext('2d')!;
-    ctx.putImageData(processed, 0, 0);
-
-    // Recolor: map grayscale -> background/foreground (or duotone)
+    // We must rewrite the buffer with current palette — read a copy so we don't mutate the cache
     const fg = hexToRgb(color.foreground);
     const bg = hexToRgb(color.background);
     const accent = hexToRgb(color.accent);
     const mode = color.mode;
     const ramp = color.duotoneRamp;
 
-    const id = ctx.getImageData(0, 0, width, height);
-    const d = id.data;
-    for (let i = 0; i < d.length; i += 4) {
-      const v = d[i] / 255; // grayscale 0..1
+    const out2 = ctx.createImageData(width, height);
+    const src = processed.data;
+    const dst = out2.data;
+    for (let i = 0; i < src.length; i += 4) {
+      const v = src[i] / 255; // grayscale
       let r: number, g: number, b: number;
       if (mode === 'duo') {
         r = bg.r + (fg.r - bg.r) * v;
         g = bg.g + (fg.g - bg.g) * v;
         b = bg.b + (fg.b - bg.b) * v;
       } else if (mode === 'tri') {
-        // 3-stop: bg -> accent (at ramp) -> fg
         if (v < ramp) {
           const t = v / ramp;
           r = bg.r + (accent.r - bg.r) * t;
@@ -100,28 +133,23 @@ export function useDither(): DitheredOutput {
           b = accent.b + (fg.b - accent.b) * t;
         }
       } else {
-        // mono: hard map at 0.5
-        if (v >= 0.5) {
-          r = fg.r; g = fg.g; b = fg.b;
-        } else {
-          r = bg.r; g = bg.g; b = bg.b;
-        }
+        if (v >= 0.5) { r = fg.r; g = fg.g; b = fg.b; }
+        else { r = bg.r; g = bg.g; b = bg.b; }
       }
-      d[i] = r;
-      d[i + 1] = g;
-      d[i + 2] = b;
-      // preserve alpha
+      dst[i] = r;
+      dst[i + 1] = g;
+      dst[i + 2] = b;
+      dst[i + 3] = src[i + 3];
     }
-    ctx.putImageData(id, 0, 0);
+    ctx.putImageData(out2, 0, 0);
     setCanvas(out);
   }
 
-  function run() {
+  function runDither() {
     const img = imageRef.current;
     const w = workerRef.current;
     if (!img || !w) return;
 
-    // Downsample to pixelScale for the dither pass
     const px = Math.max(1, dither.pixelScale);
     const tw = Math.max(8, Math.floor(img.naturalWidth / px));
     const th = Math.max(8, Math.floor(img.naturalHeight / px));
@@ -157,30 +185,6 @@ export function useDither(): DitheredOutput {
     setBusy(true);
     w.postMessage(job, [imageData.data.buffer]);
   }
-
-  // re-run on parameter changes (debounced)
-  useEffect(() => {
-    if (!imageRef.current) return;
-    const t = setTimeout(run, 60);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    dither.algorithm,
-    dither.pixelScale,
-    dither.threshold,
-    dither.levels,
-    dither.preBlur,
-    dither.contrast,
-    dither.brightness,
-    dither.gamma,
-    dither.invert,
-    dither.serpentine,
-    color.background,
-    color.foreground,
-    color.accent,
-    color.mode,
-    color.duotoneRamp,
-  ]);
 
   return { canvas, durationMs, busy };
 }
