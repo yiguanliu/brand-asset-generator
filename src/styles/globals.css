@@ -1,0 +1,163 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  --c-void: 10 9 8;
+  --c-paper: 239 234 224;
+  --c-ash: 122 119 111;
+  --c-blood: 168 32 44;
+  --c-ink: 0 0 0;
+  --c-gauze: 214 209 196;
+  --c-char: 21 19 15;
+  --c-smoke: 31 28 24;
+  --c-edge: 42 39 34;
+  --ui-scale: 1;
+  --ui-font-mono: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace;
+  --ui-font-sans: 'Inter Tight', system-ui, sans-serif;
+  --ui-font-body: 'DM Mono', ui-monospace, monospace;
+  --ui-font-family: var(--ui-font-mono);
+}
+
+html {
+  font-size: calc(16px * var(--ui-scale));
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  background: rgb(var(--c-void));
+  color: rgb(var(--c-paper));
+  font-family: var(--ui-font-family);
+  font-feature-settings: 'ss01', 'cv11';
+  text-rendering: geometricPrecision;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgb(var(--c-paper));
+  color: rgb(var(--c-void));
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--c-edge));
+  border-radius: 0;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--c-ash));
+}
+
+/* Custom range input */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  width: 100%;
+  height: 16px;
+}
+input[type='range']::-webkit-slider-runnable-track {
+  height: 1px;
+  background: rgb(var(--c-edge));
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 10px;
+  width: 2px;
+  background: rgb(var(--c-paper));
+  margin-top: -4px;
+  border-radius: 0;
+  cursor: ew-resize;
+}
+input[type='range']::-moz-range-track {
+  height: 1px;
+  background: rgb(var(--c-edge));
+}
+input[type='range']::-moz-range-thumb {
+  height: 10px;
+  width: 2px;
+  background: rgb(var(--c-paper));
+  border: none;
+  border-radius: 0;
+  cursor: ew-resize;
+}
+
+/* number / text inputs */
+.input-bare {
+  background: transparent;
+  border: 1px solid rgb(var(--c-edge));
+  color: rgb(var(--c-paper));
+  font-family: inherit;
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  padding: 5px 7px;
+  outline: none;
+  transition: border-color 120ms ease;
+}
+.input-bare:focus {
+  border-color: rgb(var(--c-paper));
+}
+
+/* hide native number input spinners */
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+}
+
+/* diagonal stripe utility (for HUD blocks) */
+.stripes {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    currentColor 0,
+    currentColor 1px,
+    transparent 1px,
+    transparent 5px
+  );
+}
+
+/* HUD label */
+.hud-label {
+  font-size: 0.625rem;
+  line-height: 1;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgb(var(--c-ash));
+}
+.hud-value {
+  font-size: 0.6875rem;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  color: rgb(var(--c-paper));
+}
+
+/* Subtle pulsing dot — "ready" indicator */
+@keyframes hud-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+.hud-pulse {
+  animation: hud-pulse 1.6s ease-in-out infinite;
+}
+
+/* Disable text selection on chrome */
+.chrome-noselect {
+  user-select: none;
+  -webkit-user-select: none;
+}
