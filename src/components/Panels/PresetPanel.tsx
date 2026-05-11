@@ -170,6 +170,8 @@ export function PresetPanel({ getThumbnail }: Props) {
                   <img
                     src={p.thumbnail}
                     alt={p.name}
+                    loading="lazy"
+                    decoding="async"
                     className="w-10 h-12 object-cover border border-edge bg-void"
                   />
                 )}

@@ -45,6 +45,7 @@ export function SampleGallery() {
                 src={s.file}
                 alt={s.label}
                 loading="lazy"
+                decoding="async"
                 className={clsx(
                   'absolute inset-0 w-full h-full object-cover transition-all',
                   active ? 'grayscale-0' : 'grayscale opacity-70 group-hover:opacity-100 group-hover:grayscale-0',

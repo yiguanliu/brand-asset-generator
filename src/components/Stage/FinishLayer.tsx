@@ -17,36 +17,26 @@ export function FinishLayer({ width, height }: Props) {
       setGrainCanvas(null);
       return;
     }
-    const c = document.createElement('canvas');
-    c.width = Math.max(64, Math.floor(width / 2));
-    c.height = Math.max(64, Math.floor(height / 2));
-    const ctx = c.getContext('2d')!;
-    const id = ctx.createImageData(c.width, c.height);
-    const a = Math.floor(255 * finish.grainAmount);
+    // Render at a smaller base then upscale via Konva — drastically less pixel work.
     const size = Math.max(1, finish.grainSize);
-    for (let y = 0; y < c.height; y++) {
-      for (let x = 0; x < c.width; x++) {
-        const cellY = Math.floor(y / size);
-        const cellX = Math.floor(x / size);
-        const cellIdx = (cellY * c.width + cellX) * 4;
-        if (x % size === 0 && y % size === 0) {
-          const v = (Math.random() - 0.5) * 2;
-          const gray = v > 0 ? 255 : 0;
-          const alpha = Math.floor(Math.abs(v) * a);
-          id.data[cellIdx] = gray;
-          id.data[cellIdx + 1] = gray;
-          id.data[cellIdx + 2] = gray;
-          id.data[cellIdx + 3] = alpha;
-        }
-        const i = (y * c.width + x) * 4;
-        if (i !== cellIdx) {
-          // copy from cell
-          id.data[i] = id.data[cellIdx];
-          id.data[i + 1] = id.data[cellIdx + 1];
-          id.data[i + 2] = id.data[cellIdx + 2];
-          id.data[i + 3] = id.data[cellIdx + 3];
-        }
-      }
+    const baseW = Math.max(64, Math.floor(width / (2 * size)));
+    const baseH = Math.max(64, Math.floor(height / (2 * size)));
+    const c = document.createElement('canvas');
+    c.width = baseW;
+    c.height = baseH;
+    const ctx = c.getContext('2d')!;
+    const id = ctx.createImageData(baseW, baseH);
+    const a = Math.floor(255 * finish.grainAmount);
+    const data = id.data;
+    // One pass: per-pixel grain at base resolution. Konva scales to canvas size.
+    for (let i = 0; i < data.length; i += 4) {
+      const v = Math.random() - 0.5;
+      const gray = v > 0 ? 255 : 0;
+      const alpha = Math.floor(Math.abs(v) * 2 * a);
+      data[i] = gray;
+      data[i + 1] = gray;
+      data[i + 2] = gray;
+      data[i + 3] = alpha;
     }
     ctx.putImageData(id, 0, 0);
     setGrainCanvas(c);
