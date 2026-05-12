@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type Konva from 'konva';
+import { Analytics } from '@vercel/analytics/react';
 import { TopBar } from '@/components/Shell/TopBar';
 import { StatusBar } from '@/components/Shell/StatusBar';
 import { Sidebar } from '@/components/Shell/Sidebar';
@@ -62,6 +63,7 @@ export default function App() {
 
   return (
     <div className="h-full w-full flex flex-col bg-void text-paper">
+      <Analytics />
       <TopBar />
       <div className="flex-1 flex min-h-0">
         <Sidebar getThumbnail={getThumbnail} onExport={onExport} />
