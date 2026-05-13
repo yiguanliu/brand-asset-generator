@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type Konva from 'konva';
+import { Analytics } from '@vercel/analytics/react';
 import { TopBar } from '@/components/Shell/TopBar';
 import { StatusBar } from '@/components/Shell/StatusBar';
 import { Sidebar } from '@/components/Shell/Sidebar';
@@ -72,6 +73,7 @@ export default function App() {
       </div>
       <StatusBar ditherMs={durationMs} busy={busy} />
       <SettingsDrawer />
+      <Analytics />
     </div>
   );
 }
